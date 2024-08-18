@@ -4,13 +4,29 @@ const dotenv = require("dotenv");
 const { userRouter } = require("./routers/user.router");
 const { AppError } = require("./shared/error");
 const { errorHandler } = require("./shared/errorHandler.middleware");
+const session = require("express-session");
+const passport = require("passport");
 
 dotenv.config({
   path: process.env.NODE_ENV === "production" ? ".env.production" : ".env",
 });
 
+
 const app = express();
 const port = process.env.PORT;
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 15 * 24 * 60 * 60 * 1000
+  }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(express.json());
 app.use(cors());
