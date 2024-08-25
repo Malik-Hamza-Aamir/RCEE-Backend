@@ -1,41 +1,43 @@
-// import passport from "passport";
-// import { Strategy as LocalStrategy } from "passport-local";
-// import { db } from "../../shared/db";
+import { Strategy as LocalStrategy } from "passport-local";
+import passport from "passport";
+import { db } from "../../shared/db";
 
-// passport.use(
-//   new LocalStrategy(
-//     { usernameField: "email" },
-//     async (email, password, done) => {
-//       try {
-//         const user = await db.user.findUnique({ where: { email } });
-//         if (!user) {
-//           return done(null, false, { message: "Incorrect email." });
-//         }
+passport.use(
+  "local",
+  new LocalStrategy({ passReqToCallback: true }, async (req, email, password, done) => {
+      const user = await db.user.findUnique({ where: { email } });
 
-//         const isMatch = await comparePasswords(password, user.password);
-//         if (!isMatch) {
-//           return done(null, false, { message: "Incorrect password." });
-//         }
+      if (!user) {
+        return done(null, false, { message: "Incorrect email." });
+      }
 
-//         return done(null, user);
-//       } catch (err) {
-//         return done(err);
-//       }
-//     }
-//   )
-// );
+      const isMatch = await comparePasswords(password, user.password);
+      
+      if (!isMatch) {
+        return done(null, false, { message: "Incorrect password." });
+      }
 
-// passport.serializeUser((user: any, done) => {
-//   done(null, user.id);
-// });
+      return done(null, user);
+  })
+);
 
-// passport.deserializeUser(async (id: number, done) => {
-//   try {
-//     const user = await db.user.findUnique({ where: { id } });
-//     done(null, user);
-//   } catch (err) {
-//     done(err, null);
-//   }
-// });
+const comparePasswords = (password: string, hashedPassword: string) => {
+  return true;
+};
 
-// export default passport;
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (email: string, done) => {
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        email,
+      },
+    });
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});

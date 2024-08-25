@@ -6,3 +6,14 @@ export const userSchema = z.object({
 });
 
 export type UserLogin = z.infer<typeof userSchema>;
+
+export const userRegisterSchema = z.object({
+  
+  firstname: z.string(),
+  lastname: z.string(),
+  email: z.string(),
+  password: z.string(),
+  image: z.string().optional(),
+});
+
+export type UserRegister = z.infer<typeof userRegisterSchema>;
