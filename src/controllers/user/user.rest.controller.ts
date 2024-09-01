@@ -1,7 +1,3 @@
-// controllers validate the input
-// throws error if input is incorrect
-// pass to service layer for either database query writing or any other operation
-// if we only need to write in db then it can also be done here and skip the service layer
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../shared/error";
 import { userSchema, userRegisterSchema } from "../../shared/zod.schema";
@@ -9,6 +5,7 @@ import { z } from "zod";
 import {
   loginService,
   registerService,
+  loginUserSession,
 } from "../../services/user/user.service";
 
 export const handleLogin = async (
@@ -18,9 +15,11 @@ export const handleLogin = async (
 ) => {
   try {
     const loginData = userSchema.parse(req.body);
-    loginService(loginData);
-    res.status(200).json({ message: "User registration successful" });
-  } catch (error) {
+    const user = await loginService(loginData);
+    await loginUserSession(req, user);
+
+    res.status(200).json({ message: "Login successful", user });
+  } catch (error: any | unknown) {
     if (error instanceof z.ZodError) {
       const errorMessages = error.errors.map((err) => {
         return `${err.message}`;
@@ -36,7 +35,7 @@ export const handleLogin = async (
       );
     }
 
-    return error;
+    return next(new AppError(error.message, 401, error?.message, false));
   }
 };
 

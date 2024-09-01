@@ -1,14 +1,34 @@
-// for executing business logic and db logic
 import { UserLogin, UserRegister } from "../../shared/zod.schema";
 import passport from "passport";
-import { db } from "../../shared/db";
 const bcrypt = require("bcrypt");
 import { createNewUser, findUser } from "../../models/user.model";
+import { Request } from "express";
 
-export const loginService = (userData: UserLogin) => {
-  // from models find the user get the user here
-  // then use bycrypt to compare the password here
-  // use the passport js local strategy here
+export const loginService = async (userData: UserLogin) => {
+  return new Promise((resolve, reject) => {
+    passport.authenticate("local", (err: Error, user: any, info: any) => {
+      if (err) {
+        reject(err);
+      }
+
+      if (user === false) {
+        reject(info);
+      }
+
+      resolve(user);
+    })({ body: userData });
+  });
+};
+
+export const loginUserSession = (req: Request, user: any) => {
+  return new Promise((resolve, reject) => {
+    req.logIn(user, (loginErr: any) => {
+      if (loginErr) {
+        reject(loginErr);
+      }
+      resolve(user);
+    });
+  });
 };
 
 export const registerService = async (userData: UserRegister) => {
