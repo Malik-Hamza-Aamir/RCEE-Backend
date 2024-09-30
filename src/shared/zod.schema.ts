@@ -8,9 +8,8 @@ export const userSchema = z.object({
 export type UserLogin = z.infer<typeof userSchema>;
 
 export const userRegisterSchema = z.object({
-  
-  firstname: z.string(),
-  lastname: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
   email: z.string(),
   password: z.string(),
   image: z.string().optional(),

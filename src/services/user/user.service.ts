@@ -2,7 +2,8 @@ import { UserLogin, UserRegister } from "../../shared/zod.schema";
 import passport from "passport";
 const bcrypt = require("bcrypt");
 import { createNewUser, findUser } from "../../models/user.model";
-import { Request } from "express";
+import { NextFunction, Request } from "express";
+import { AppError } from "../../shared/error";
 
 export const loginService = async (userData: UserLogin) => {
   return new Promise((resolve, reject) => {
@@ -31,25 +32,29 @@ export const loginUserSession = (req: Request, user: any) => {
   });
 };
 
-export const registerService = async (userData: UserRegister) => {
-  const { firstname, lastname, email, password } = userData;
+export const registerService = async (
+  userData: UserRegister,
+  next: NextFunction
+) => {
+  const { firstName, lastName, email, password } = userData;
   const userExists = await findUser(email);
 
   if (userExists) {
-    return { success: false, message: "User Already Exists" };
-  } else {
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    const userPayload: UserRegister = {
-      firstname,
-      lastname,
-      email,
-      password: passwordHash,
-    };
-
-    const newUser = await createNewUser(userPayload);
-
-    return { success: true, user: newUser };
+    return next(
+      new AppError("Duplicate User", 409, "User Already Exists", false)
+    );
   }
+  const saltRounds = 10;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
+  const userPayload: UserRegister = {
+    firstName,
+    lastName,
+    email,
+    password: passwordHash,
+  };
+
+  const newUser = await createNewUser(userPayload);
+
+  return { success: true, user: newUser };
 };

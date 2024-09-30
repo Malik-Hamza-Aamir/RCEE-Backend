@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../shared/error";
-import { userSchema, userRegisterSchema } from "../../shared/zod.schema";
+import { userSchema } from "../../shared/zod.schema";
 import { z } from "zod";
 import {
   loginService,
@@ -39,6 +39,20 @@ export const handleLogin = async (
   }
 };
 
+export const userRegisterSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(6, "Must be 6 characters long")
+    .regex(/[A-Z]/, "At least one uppercase letter required")
+    .regex(/\d/, "Must contain at least one number")
+    .regex(/[@$!%*?&#]/, "Must contain at least one special character"),
+  image: z.string().optional(),
+});
+
 export const handleRegistration = async (
   req: Request,
   res: Response,
@@ -46,26 +60,23 @@ export const handleRegistration = async (
 ) => {
   try {
     const registrationData = userRegisterSchema.parse(req.body);
-    const registrationResult = await registerService(registrationData);
+    const registrationResult = await registerService(registrationData, next);
 
-    if (registrationResult.success) {
+    if (registrationResult) {
       return res.status(201).json({
         id: registrationResult.user?.id,
         message: "User registered successfully",
         redirect: "/login",
       });
-    } else {
-      return res.status(409).json({ message: registrationResult.message });
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errorMessages = error.errors.map((err) => `${err.message}`);
-
       return next(
         new AppError(
-          "Invalid or missing email and password",
+          "Invalid or missing values recieved",
           400,
-          errorMessages.join(" and "),
+          errorMessages[0],
           false
         )
       );
